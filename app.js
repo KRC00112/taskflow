@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const port=3000
+const amqp = require('amqplib');
 
 const {Pool}=require('pg');
 require('dotenv').config();
