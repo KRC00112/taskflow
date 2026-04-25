@@ -13,6 +13,29 @@ const pool = new Pool({
     port:process.env.PORT,
 })
 
+let channel;
+
+
+async function connectQueue() {
+    const connection = await amqp.connect('amqp://localhost');
+    channel = await connection.createChannel();
+
+
+
+
+    await channel.assertQueue('task_queue', {
+        durable: true,
+        arguments: {
+            'x-queue-type': 'quorum'
+        }
+    });
+    console.log('Connected to RabbitMQ!')
+}
+
+
+
+connectQueue();
+
 app.use(express.json());
 
 app.get('/', async (req,res)=>{
@@ -55,8 +78,13 @@ app.post('/', async (req,res)=>{
     try {
         const client = await pool.connect();
         const results=await client.query("INSERT INTO tasks (title) VALUES ($1) RETURNING *", [req.body.title]);
-        res.send(results.rows);
+        const task = results.rows[0];
         client.release();
+        channel.sendToQueue('task_queue', Buffer.from(JSON.stringify(task)),{
+            persistent: true,
+        });
+        console.log(`[X] Task published to queue: ${task.id}`);
+        res.send(task)
     }catch(err){
         console.log(err);
         res.send("Error: ",err)

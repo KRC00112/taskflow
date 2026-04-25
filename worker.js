@@ -1,4 +1,15 @@
 const amqp = require('amqplib');
+const { Pool } = require('pg');
+require('dotenv').config();
+
+const pool = new Pool({
+    user: process.env.USER,
+    host: process.env.HOST,
+    database: process.env.DATABASE,
+    password: process.env.PASSWORD,
+    port: process.env.PORT,
+});
+
 
 async function main(){
 
@@ -14,16 +25,29 @@ async function main(){
         }
     });
 
-    channel.consume(queue,(msg)=>{
 
-        const secs = msg.content.toString().split('.').length-1;
+    channel.prefetch(1);
 
-        console.log(`[X] Received ${msg.content.toString()}`);
-        setTimeout(()=>{
-            console.log("[X] Done")
-        },secs*1000);
+    channel.consume(queue,async (msg)=>{
+        const task = JSON.parse(msg.content.toString());
+        console.log(`[X] Received task: ${task.id} - ${task.title}`);
+
+        await pool.query(
+            "UPDATE tasks SET status='processing' WHERE id=$1",
+            [task.id]
+        );
+
+        await new Promise(resolve => setTimeout(resolve, 10000));
+
+        await pool.query(
+            "UPDATE tasks SET status='done' WHERE id=$1",
+            [task.id]
+        );
+
+        console.log(`[X] Done: ${task.id}`);
+        channel.ack(msg);
     },{
-        noAck:true,
+        noAck:false,
     });
 
 }
