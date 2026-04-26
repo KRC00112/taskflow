@@ -1,4 +1,13 @@
 services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: taskflowdb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
   rabbitmq:
     image: rabbitmq:3-management
     ports:
