@@ -1,0 +1,22 @@
+name: deploy-to-ec2
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+
+jobs:
+  push-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ssh and deploy
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{secrets.EC2_HOST}}
+          username: ${{secrets.EC2_USER}}
+          key: ${{secrets.EC2_SSH_KEY}}
+          script: |
+            cd/home/ubuntu/taskflow
+            git pull origin main
+            docker-compose up --build -d
