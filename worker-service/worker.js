@@ -1,6 +1,7 @@
 const amqp = require('amqplib');
 const { Pool } = require('pg');
 require('dotenv').config();
+const logger = require('./logger');
 
 const pool = new Pool({
     user: process.env.DB_USER,
@@ -10,9 +11,7 @@ const pool = new Pool({
     port: process.env.DB_PORT,
 });
 
-
 async function main(){
-
     const connection = await amqp.connect('amqp://rabbitmq');
     const channel = await connection.createChannel();
 
@@ -25,12 +24,14 @@ async function main(){
         }
     });
 
-
     channel.prefetch(1);
 
-    channel.consume(queue,async (msg)=>{
+    logger.info('Worker waiting for tasks');
+
+    channel.consume(queue, async (msg)=>{
         const task = JSON.parse(msg.content.toString());
-        console.log(`[X] Received task: ${task.id} - ${task.title}`);
+        const start = Date.now();
+        logger.info('Task received', { task_id: task.id, title: task.title });
 
         await pool.query(
             "UPDATE tasks SET status='processing' WHERE id=$1",
@@ -44,12 +45,11 @@ async function main(){
             [task.id]
         );
 
-        console.log(`[X] Done: ${task.id}`);
+        logger.info('Task done', { task_id: task.id, duration_ms: Date.now() - start });
         channel.ack(msg);
     },{
         noAck:false,
     });
-
 }
 
 main();
