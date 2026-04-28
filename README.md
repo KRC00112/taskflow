@@ -103,14 +103,18 @@ terraform apply
 
 ## Design Decisions
 
-**separating API and WORKER Services**
+**Separating API and WORKER Services**
+
 The API can respond immediately without waiting for processing to complete. If the worker is slow or crashes, the API stays unaffected. This is the foundation of any resilient backend system.
 
 **Choosing RabbitMQ over direct HTTP calls between services**
+
 Direct HTTP between services creates tight coupling - if the worker is down, the API fails too. RabbitMQ acts as a buffer: jobs queue up and are processed when the worker is ready. Quorum queues ensure no jobs are lost even if RabbitMQ restarts.
 
 **Docker Compose over Kubernetes**
+
 Kubernetes adds significant operational overhead that isn't justified for a two-service system. Docker Compose keeps the deployment simple and reproducible while still demonstrating containerization and multi-service orchestration.
 
 **Why Terraform?**
+
 Infrastructure as code means the entire AWS setup can be recreated from scratch with one command. No clicking through consoles, no undocumented manual steps.
