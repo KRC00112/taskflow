@@ -91,7 +91,7 @@ app.get('/metrics', async (req, res) => {
             tasks_done: parseInt(done.rows[0].count),
         });
     } catch (err) {
-        logger.error('Failed to get metrics', { error: err.message });
+        logger.error('Failsed to get metrics', { error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
