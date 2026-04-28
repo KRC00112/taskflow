@@ -73,7 +73,7 @@ app.post('/', async (req,res)=>{
     }
 })
 
-app.get('/:metrics', async (req, res) => {
+app.get('/metrics/', async (req, res) => {
     try {
         const client = await pool.connect();
 
