@@ -40,7 +40,7 @@ app.get('/', async (req,res)=>{
         client.release();
     }catch(err){
         logger.error('Failed to get tasks', { error: err.message });
-        res.send("error: ", err);
+        res.status(500).json({ error: err.message });
     }
 })
 
@@ -75,7 +75,7 @@ app.get('/:id', async (req,res)=>{
         client.release();
     }catch(err){
         logger.error('Failed to get task', { error: err.message });
-        res.send("error: ", err);
+        res.status(500).json({ error: err.message });
     }
 })
 
@@ -94,7 +94,7 @@ app.post('/', async (req,res)=>{
         res.send(task)
     }catch(err){
         logger.error('Failed to create task', { error: err.message });
-        res.send("Error: ", err)
+        res.status(500).json({ error: err.message });
     }
 })
 
