@@ -34,10 +34,8 @@ app.use(express.json());
 
 app.get('/', async (req,res)=>{
     try{
-        const client = await pool.connect();
-        const result = await client.query("SELECT * FROM tasks");
+        const result = await pool.query("SELECT * FROM tasks");
         res.send(result.rows);
-        client.release();
     }catch(err){
         logger.error('Failed to get tasks', { error: err.message });
         res.status(500).json({ error: err.message });
@@ -69,10 +67,8 @@ app.get('/metrics', async (req, res) => {
 
 app.get('/:id', async (req,res)=>{
     try{
-        const client = await pool.connect();
-        const result = await client.query("SELECT * FROM tasks WHERE id=$1",[req.params.id]);
+        const result = await pool.query("SELECT * FROM tasks WHERE id=$1",[req.params.id]);
         res.send(result.rows);
-        client.release();
     }catch(err){
         logger.error('Failed to get task', { error: err.message });
         res.status(500).json({ error: err.message });
@@ -83,10 +79,8 @@ app.get('/:id', async (req,res)=>{
 
 app.post('/', async (req,res)=>{
     try {
-        const client = await pool.connect();
-        const results = await client.query("INSERT INTO tasks (title) VALUES ($1) RETURNING *", [req.body.title]);
+        const results = await pool.query("INSERT INTO tasks (title) VALUES ($1) RETURNING *", [req.body.title]);
         const task = results.rows[0];
-        client.release();
         channel.sendToQueue('task_queue', Buffer.from(JSON.stringify(task)),{
             persistent: true,
         });
