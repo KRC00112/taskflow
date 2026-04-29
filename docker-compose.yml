@@ -31,12 +31,6 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: on-failure
-    logging:
-      driver: awslogs
-      options:
-        awslogs-region: us-west-2
-        awslogs-group: taskflow
-        awslogs-stream: api-service
 
   worker-service:
     build: ./worker-service
@@ -48,12 +42,6 @@ services:
       rabbitmq:
         condition: service_healthy
     restart: on-failure
-    logging:
-      driver: awslogs
-      options:
-        awslogs-region: us-west-2
-        awslogs-group: taskflow
-        awslogs-stream: worker-service
 
 volumes:
   pgdata:
