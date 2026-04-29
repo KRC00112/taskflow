@@ -28,16 +28,17 @@ All services run as Docker containers on AWS EC2, provisioned with Terraform and
 
 ## Tech Stack
 
-- **API Service** - Node.js, Express
-- **Worker Service** - Node.js
-- **Message Queue** - RabbitMQ (quorum queues)
-- **Database** - PostgreSQL
-- **Logging** - Winston (structured JSON logs)
-- **Containerization** - Docker, Docker Compose
-- **Infrastructure** - AWS EC2, Terraform
-- **CI/CD** - GitHub Actions
-- **Observability** - CloudWatch log shipping, `/metrics` endpoint
-
+| Layer | Technology |
+|-------|-----------|
+| API Service | Node.js, Express |
+| Worker Service | Node.js |
+| Message Queue | RabbitMQ (quorum queues) |
+| Database | PostgreSQL |
+| Logging | Winston (structured JSON logs) |
+| Containerization | Docker, Docker Compose |
+| Infrastructure | AWS EC2, Terraform |
+| CI/CD | GitHub Actions |
+| Observability | /metrics endpoint, structured logs |
 
 ## API Endpoints
 
@@ -50,7 +51,7 @@ All services run as Docker containers on AWS EC2, provisioned with Terraform and
 
 **Creating a task with Postman:**
 
-Send a POST request to `http://<PUBLiC IP>:3000` with the following JSON body:
+Send a POST request to `http://<PUBLIC_IP>:3000` with the following JSON body:
 
 ```json
 {
@@ -59,6 +60,7 @@ Send a POST request to `http://<PUBLiC IP>:3000` with the following JSON body:
 ```
 
 **Response:**
+
 ```json
 {
   "id": 1,
@@ -77,18 +79,18 @@ Every push to `main` triggers a GitHub Actions workflow that:
 1. SSHs into the EC2 instance
 2. Pulls the latest code from GitHub
 3. Rebuilds Docker images
-4. Restarts the stack with zero downtime
+4. Restarts the stack
 
 Secrets stored in GitHub: `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`.
 
 ## Infrastructure
 
 Provisioned with Terraform:
+
 - AWS EC2 `t3.micro` instance (Ubuntu 24.04)
 - Security group with ports 22, 3000, 15672
 - SSH key pair
 
-To provision:
 ```bash
 cd terraform
 terraform init
@@ -97,24 +99,23 @@ terraform apply
 
 ## Observability
 
-- **Structured logs** - Winston emits JSON logs with `task_id`, `title`, `duration_ms`, `error` fields
-- **Metrics endpoint** - `GET /metrics` returns live counts of tasks by status
-- **CloudWatch** - both containers ship logs to the `taskflow` log group in AWS CloudWatch via the `awslogs` Docker driver
+- **Structured logs** — Winston emits JSON logs with `task_id`, `title`, `duration_ms`, and `error` fields
+- **Metrics endpoint** — `GET /metrics` returns live counts of tasks by status
 
 ## Design Decisions
 
-**Separating API and WORKER Services**
+**Separating API and Worker services**
 
 The API can respond immediately without waiting for processing to complete. If the worker is slow or crashes, the API stays unaffected. This is the foundation of any resilient backend system.
 
 **Choosing RabbitMQ over direct HTTP calls between services**
 
-Direct HTTP between services creates tight coupling - if the worker is down, the API fails too. RabbitMQ acts as a buffer: jobs queue up and are processed when the worker is ready. Quorum queues ensure no jobs are lost even if RabbitMQ restarts.
+Direct HTTP between services creates tight coupling — if the worker is down, the API fails too. RabbitMQ acts as a buffer: jobs queue up and are processed when the worker is ready. Quorum queues ensure no jobs are lost even if RabbitMQ restarts.
 
 **Docker Compose over Kubernetes**
 
 Kubernetes adds significant operational overhead that isn't justified for a two-service system. Docker Compose keeps the deployment simple and reproducible while still demonstrating containerization and multi-service orchestration.
 
-**Why Terraform?**
+**Terraform over manual AWS setup**
 
 Infrastructure as code means the entire AWS setup can be recreated from scratch with one command. No clicking through consoles, no undocumented manual steps.
