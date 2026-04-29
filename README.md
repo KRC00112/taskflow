@@ -99,8 +99,8 @@ terraform apply
 
 ## Observability
 
-- **Structured logs** — Winston emits JSON logs with `task_id`, `title`, `duration_ms`, and `error` fields
-- **Metrics endpoint** — `GET /metrics` returns live counts of tasks by status
+- **Structured logs** - Winston emits JSON logs with `task_id`, `title`, `duration_ms`, and `error` fields
+- **Metrics endpoint** - `GET /metrics` returns live counts of tasks by status
 
 ## Design Decisions
 
@@ -110,7 +110,7 @@ The API can respond immediately without waiting for processing to complete. If t
 
 **Choosing RabbitMQ over direct HTTP calls between services**
 
-Direct HTTP between services creates tight coupling — if the worker is down, the API fails too. RabbitMQ acts as a buffer: jobs queue up and are processed when the worker is ready. Quorum queues ensure no jobs are lost even if RabbitMQ restarts.
+Direct HTTP between services creates tight coupling. If the worker is down, the API fails too. RabbitMQ acts as a buffer: jobs queue up and are processed when the worker is ready. Quorum queues ensure no jobs are lost even if RabbitMQ restarts.
 
 **Docker Compose over Kubernetes**
 
