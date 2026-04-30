@@ -38,7 +38,7 @@ All services run as Docker containers on AWS EC2, provisioned with Terraform and
 | Containerization | Docker, Docker Compose |
 | Infrastructure | AWS EC2, Terraform |
 | CI/CD | GitHub Actions |
-| Observability | /metrics endpoint, structured logs |
+| Observability | CloudWatch, /metrics endpoint, structured logs |
 
 ## API Endpoints
 
@@ -101,6 +101,7 @@ terraform apply
 
 - **Structured logs** - Winston emits JSON logs with `task_id`, `title`, `duration_ms`, and `error` fields
 - **Metrics endpoint** - `GET /metrics` returns live counts of tasks by status
+- **CloudWatch** - both containers ship logs to the `taskflow` log group in AWS CloudWatch via the `awslogs` Docker driver
 
 ## Design Decisions
 
