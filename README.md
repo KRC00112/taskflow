@@ -38,7 +38,7 @@ All services run as Docker containers on AWS EC2, provisioned with Terraform and
 | Containerization | Docker, Docker Compose |
 | Infrastructure | AWS EC2, Terraform |
 | CI/CD | GitHub Actions |
-| Observability | CloudWatch, /metrics endpoint, structured logs |
+| Observability | CloudWatch, `/metrics` endpoint, structured logs |
 
 ## API Endpoints
 
