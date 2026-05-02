@@ -171,10 +171,10 @@ Wait 1-2 minutes after provisioning for the instance to finish booting, then SSH
 ssh -i ~/.ssh/taskflow-key ubuntu@<YOUR_PUBLIC_IP>
 ```
 
-The repo is already cloned at `/home/ubuntu/Taskflow` by the `user_data` script. Navigate into it:
+The repo is already cloned at `/home/ubuntu/taskflow` by the `user_data` script. Navigate into it:
 
 ```bash
-cd /home/ubuntu/Taskflow
+cd /home/ubuntu/taskflow
 ```
 
 Create environment files for each service:
@@ -184,7 +184,7 @@ cat > api-service/.env << EOF
 DB_USER=postgres
 DB_HOST=postgres
 DB_NAME=taskflowdb
-DB_PASSWORD=yourpassword
+DB_PASSWORD="yourpassword"
 DB_PORT=5432
 EOF
 ```
@@ -194,7 +194,7 @@ cat > worker-service/.env << EOF
 DB_USER=postgres
 DB_HOST=postgres
 DB_NAME=taskflowdb
-DB_PASSWORD=yourpassword
+DB_PASSWORD="yourpassword"
 DB_PORT=5432
 EOF
 ```
