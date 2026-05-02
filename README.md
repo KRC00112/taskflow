@@ -90,8 +90,6 @@ Secrets stored in GitHub: `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`.
 - **Metrics endpoint** — `GET /metrics` returns live counts of tasks by status
 - **CloudWatch** — both containers ship logs to the `taskflow` log group in AWS CloudWatch via the `awslogs` Docker driver
 
-## Design Diagrams
-
 ### Architecture Diagram
 
 <table>
@@ -163,7 +161,29 @@ public_ip = "x.x.x.x"
 
 Save this IP. You will need it in the next steps.
 
-### 3. Configure Environment Variables on the Server
+### 3. Attach CloudWatch IAM Role
+
+The containers ship logs to CloudWatch via the `awslogs` Docker driver. For this to work the EC2 instance needs permission to write to CloudWatch. Without this the stack will fail to start.
+
+**Create the IAM role:**
+
+Go to AWS Console → IAM → Roles → Create role:
+- Trusted entity: AWS service → EC2
+- Permissions: search for and add `CloudWatchAgentServerPolicy`
+- Name it `taskflow-cloudwatch-role`
+- Click Create role
+
+**Attach it to your instance:**
+
+Go to AWS Console → EC2 → select your instance → Actions → Security → Modify IAM role → select `taskflow-cloudwatch-role` → Update IAM role.
+
+**Create the CloudWatch log group:**
+
+```bash
+aws logs create-log-group --log-group-name taskflow --region <YOUR_REGION>
+```
+
+### 4. Configure Environment Variables on the Server
 
 Wait 1-2 minutes after provisioning for the instance to finish booting, then SSH in:
 
@@ -171,37 +191,37 @@ Wait 1-2 minutes after provisioning for the instance to finish booting, then SSH
 ssh -i ~/.ssh/taskflow-key ubuntu@<YOUR_PUBLIC_IP>
 ```
 
-The repo is already cloned at `/home/ubuntu/taskflow` by the `user_data` script. Navigate into it:
+The repo is already cloned at `/home/ubuntu/Taskflow` by the `user_data` script. Navigate into it:
 
 ```bash
-cd /home/ubuntu/taskflow
+cd /home/ubuntu/Taskflow
 ```
 
-Create environment files for each service:
+Create environment files for each service using `tee` (required since the folder is owned by root):
 
 ```bash
-cat > api-service/.env << EOF
+sudo tee api-service/.env << EOF
 DB_USER=postgres
 DB_HOST=postgres
 DB_NAME=taskflowdb
-DB_PASSWORD="yourpassword"
+DB_PASSWORD=yourpassword
 DB_PORT=5432
 EOF
 ```
 
 ```bash
-cat > worker-service/.env << EOF
+sudo tee worker-service/.env << EOF
 DB_USER=postgres
 DB_HOST=postgres
 DB_NAME=taskflowdb
-DB_PASSWORD="yourpassword"
+DB_PASSWORD=yourpassword
 DB_PORT=5432
 EOF
 ```
 
 Replace `yourpassword` with a password of your choice. Make sure `DB_HOST` is set to `postgres` (the Docker Compose service name), not `localhost`.
 
-### 4. Start the Stack
+### 5. Start the Stack
 
 From the repo root on the server:
 
@@ -215,7 +235,7 @@ This starts RabbitMQ, PostgreSQL, the API service, and the worker service as con
 docker-compose ps
 ```
 
-### 5. Create the Database Table
+### 6. Create the Database Table
 
 ```bash
 docker-compose exec postgres psql -U postgres -d taskflowdb -c "CREATE TABLE tasks (id SERIAL PRIMARY KEY, title VARCHAR(255) NOT NULL, status VARCHAR(50) DEFAULT 'pending', created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW());"
@@ -223,7 +243,7 @@ docker-compose exec postgres psql -U postgres -d taskflowdb -c "CREATE TABLE tas
 
 Your API is now publicly reachable at `http://<YOUR_PUBLIC_IP>:3000`.
 
-### 6. Set Up CI/CD
+### 7. Set Up CI/CD
 
 To enable automatic deployment on every push to `main`, add the following secrets to your GitHub repository under Settings → Secrets and variables → Actions:
 
@@ -235,11 +255,11 @@ To enable automatic deployment on every push to `main`, add the following secret
 
 Once set, every push to `main` will SSH into your EC2 instance, pull the latest code, rebuild the images, and restart the stack automatically. You will not need to SSH in again to apply updates.
 
-### 7. View the RabbitMQ Dashboard
+### 8. View the RabbitMQ Dashboard
 
 Open `http://<YOUR_PUBLIC_IP>:15672` in your browser. Log in with `guest` / `guest`. You can monitor queues, message rates, and connections here.
 
-### 8. Tear Down
+### 9. Tear Down
 
 To destroy all AWS resources created by Terraform and stop incurring charges:
 
