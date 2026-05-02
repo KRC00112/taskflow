@@ -110,7 +110,11 @@ Secrets stored in GitHub: `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`.
 
 This section walks you through deploying Taskflow to your own AWS account from scratch. You will need: an AWS account, Terraform installed, the AWS CLI installed and configured, and an SSH key pair.
 
-### 1. Prerequisites
+### 1. Fork the Repository
+
+Fork this repository to your own GitHub account. All subsequent steps assume you are working from your fork, not the original repo. This is required so you can add your own GitHub secrets and set up CI/CD pointing to your own EC2 instance.
+
+### 2. Prerequisites
 
 Install and configure the AWS CLI:
 
@@ -128,12 +132,12 @@ ssh-keygen -t rsa -b 4096 -f ~/.ssh/taskflow-key
 
 Press enter twice for no passphrase. This creates `taskflow-key` (private) and `taskflow-key.pub` (public) in `~/.ssh/`.
 
-### 2. Provision Infrastructure with Terraform
+### 3. Provision Infrastructure with Terraform
 
-Clone the repository and navigate to the terraform folder:
+Clone your forked repository and navigate to the terraform folder:
 
 ```bash
-git clone https://github.com/KRC00112/Taskflow.git
+git clone https://github.com/<YOUR_USERNAME>/Taskflow.git
 cd Taskflow/terraform
 ```
 
@@ -161,7 +165,7 @@ public_ip = "x.x.x.x"
 
 Save this IP. You will need it in the next steps.
 
-### 3. Attach CloudWatch IAM Role
+### 4. Attach CloudWatch IAM Role
 
 The containers ship logs to CloudWatch via the `awslogs` Docker driver. For this to work the EC2 instance needs permission to write to CloudWatch. Without this the stack will fail to start.
 
@@ -183,7 +187,7 @@ Go to AWS Console → EC2 → select your instance → Actions → Security → 
 aws logs create-log-group --log-group-name taskflow --region <YOUR_REGION>
 ```
 
-### 4. Configure Environment Variables on the Server
+### 5. Configure Environment Variables on the Server
 
 Wait 1-2 minutes after provisioning for the instance to finish booting, then SSH in:
 
@@ -221,7 +225,7 @@ EOF
 
 Replace `yourpassword` with a password of your choice. Make sure `DB_HOST` is set to `postgres` (the Docker Compose service name), not `localhost`.
 
-### 5. Start the Stack
+### 6. Start the Stack
 
 From the repo root on the server:
 
@@ -235,7 +239,7 @@ This starts RabbitMQ, PostgreSQL, the API service, and the worker service as con
 docker-compose ps
 ```
 
-### 6. Create the Database Table
+### 7. Create the Database Table
 
 ```bash
 docker-compose exec postgres psql -U postgres -d taskflowdb -c "CREATE TABLE tasks (id SERIAL PRIMARY KEY, title VARCHAR(255) NOT NULL, status VARCHAR(50) DEFAULT 'pending', created_at TIMESTAMP DEFAULT NOW(), updated_at TIMESTAMP DEFAULT NOW());"
@@ -243,9 +247,9 @@ docker-compose exec postgres psql -U postgres -d taskflowdb -c "CREATE TABLE tas
 
 Your API is now publicly reachable at `http://<YOUR_PUBLIC_IP>:3000`.
 
-### 7. Set Up CI/CD
+### 8. Set Up CI/CD
 
-To enable automatic deployment on every push to `main`, add the following secrets to your GitHub repository under Settings → Secrets and variables → Actions:
+To enable automatic deployment on every push to `main`, add the following secrets to your forked GitHub repository under Settings → Secrets and variables → Actions:
 
 | Secret | Value |
 |--------|-------|
@@ -255,11 +259,11 @@ To enable automatic deployment on every push to `main`, add the following secret
 
 Once set, every push to `main` will SSH into your EC2 instance, pull the latest code, rebuild the images, and restart the stack automatically. You will not need to SSH in again to apply updates.
 
-### 8. View the RabbitMQ Dashboard
+### 9. View the RabbitMQ Dashboard
 
 Open `http://<YOUR_PUBLIC_IP>:15672` in your browser. Log in with `guest` / `guest`. You can monitor queues, message rates, and connections here.
 
-### 9. Tear Down
+### 10. Tear Down
 
 To destroy all AWS resources created by Terraform and stop incurring charges:
 
