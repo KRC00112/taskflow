@@ -8,6 +8,6 @@ chmod +x /usr/local/bin/docker-compose
 usermod -aG docker ubuntu
 
 cd /home/ubuntu
-git clone https://github.com/KRC00112/taskflow.git
+git clone https://github.com/${username}/taskflow.git
 cd taskflow
 docker-compose up --build -d
