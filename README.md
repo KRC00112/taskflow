@@ -29,7 +29,7 @@ All services run as Docker containers on AWS EC2, provisioned with Terraform and
 ## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
+|---|---|
 | API Service | Node.js, Express |
 | Worker Service | Node.js |
 | Message Queue | RabbitMQ (quorum queues) |
@@ -38,18 +38,18 @@ All services run as Docker containers on AWS EC2, provisioned with Terraform and
 | Containerization | Docker, Docker Compose |
 | Infrastructure | AWS EC2, Terraform |
 | CI/CD | GitHub Actions |
-| Observability | CloudWatch, `/metrics` endpoint, structured logs |
+| Observability | CloudWatch, /metrics endpoint, structured logs |
 
 ## API Endpoints
 
 | Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/` | Create a task |
-| GET | `/` | Get all tasks |
-| GET | `/:id` | Get a task by ID |
-| GET | `/metrics` | Get task counts by status |
+|---|---|---|
+| POST | / | Create a task |
+| GET | / | Get all tasks |
+| GET | /:id | Get a task by ID |
+| GET | /metrics | Get task counts by status |
 
-**Creating a task with Postman:**
+Creating a task with Postman:
 
 Send a POST request to `http://<PUBLIC_IP>:3000` with the following JSON body:
 
@@ -59,7 +59,7 @@ Send a POST request to `http://<PUBLIC_IP>:3000` with the following JSON body:
 }
 ```
 
-**Response:**
+Response:
 
 ```json
 {
@@ -87,21 +87,153 @@ Secrets stored in GitHub: `EC2_HOST`, `EC2_USER`, `EC2_SSH_KEY`.
 
 Provisioned with Terraform:
 
-- AWS EC2 `t3.micro` instance (Ubuntu 24.04)
+- AWS EC2 t3.micro instance (Ubuntu 24.04)
 - Security group with ports 22, 3000, 15672
 - SSH key pair
 
+## Observability
+
+- **Structured logs:** Winston emits JSON logs with `task_id`, `title`, `duration_ms`, and `error` fields
+- **Metrics endpoint:** `GET /metrics` returns live counts of tasks by status
+- **CloudWatch:** both containers ship logs to the `taskflow` log group in AWS CloudWatch via the `awslogs` Docker driver
+
+## Deploy Your Own
+
+This section walks you through deploying Taskflow to your own AWS account from scratch. You will need: an AWS account, Terraform installed, the AWS CLI installed and configured, and an SSH key pair.
+
+### 1. Prerequisites
+
+**Install and configure the AWS CLI:**
+
 ```bash
-cd terraform
+aws configure
+```
+
+You will be prompted for your AWS Access Key ID, Secret Access Key, default region (e.g. `us-east-1`), and output format (`json`). You can generate access keys from the AWS Console under your account name → Security Credentials → Access Keys.
+
+**Generate an SSH key pair** (if you don't have one already):
+
+```bash
+ssh-keygen -t rsa -b 4096 -f ~/.ssh/taskflow-key
+```
+
+Press enter twice for no passphrase. This creates `taskflow-key` (private) and `taskflow-key.pub` (public) in `~/.ssh/`.
+
+### 2. Provision Infrastructure with Terraform
+
+Clone the repository and navigate to the terraform folder:
+
+```bash
+git clone https://github.com/KRC00112/Taskflow.git
+cd Taskflow/terraform
+```
+
+Initialize Terraform and apply:
+
+```bash
 terraform init
 terraform apply
 ```
 
-## Observability
+Terraform will create:
+- An EC2 t3.micro instance running Ubuntu 24.04
+- A security group opening ports 22 (SSH), 3000 (API), and 15672 (RabbitMQ management UI)
+- An SSH key pair using your `~/.ssh/taskflow-key.pub`
+- Docker and Docker Compose installed on the instance automatically via user_data
 
-- **Structured logs** - Winston emits JSON logs with `task_id`, `title`, `duration_ms`, and `error` fields
-- **Metrics endpoint** - `GET /metrics` returns live counts of tasks by status
-- **CloudWatch** - both containers ship logs to the `taskflow` log group in AWS CloudWatch via the `awslogs` Docker driver
+When `terraform apply` completes it will print the public IP of your instance:
+
+```
+Outputs:
+public_ip = "x.x.x.x"
+```
+
+Save this IP. You will need it in the next steps.
+
+### 3. Configure Environment Variables on the Server
+
+SSH into the instance (wait 1-2 minutes after provisioning for it to finish booting):
+
+```bash
+ssh -i ~/.ssh/taskflow-key ubuntu@<YOUR_PUBLIC_IP>
+```
+
+Clone the repo on the server:
+
+```bash
+git clone https://github.com/KRC00112/Taskflow.git
+cd Taskflow
+```
+
+Create environment files for each service. For `api-service` and `worker-service`:
+
+```bash
+cat > api-service/.env << EOF
+DB_USER=postgres
+DB_HOST=postgres
+DB_NAME=taskflowdb
+DB_PASSWORD=yourpassword
+DB_PORT=5432
+EOF
+```
+For `worker-service`:
+
+```bash
+cat > worker-service/.env << EOF
+DB_USER=postgres
+DB_HOST=postgres
+DB_NAME=taskflowdb
+DB_PASSWORD=yourpassword
+DB_PORT=5432
+EOF
+```
+
+Replace `yourpassword` with a password of your choice. Make sure `DB_HOST` is set to `postgres` (the Docker Compose service name), not `localhost`.
+
+### 4. Start the Stack
+
+From the repo root on the server:
+
+```bash
+docker compose up -d --build
+```
+
+This starts RabbitMQ, PostgreSQL, the API service, and the worker service as containers. Verify everything is running:
+
+```bash
+docker compose ps
+```
+Your API is now publicly reachable at `http://<YOUR_PUBLIC_IP>:3000`.
+
+> **Note:** This manual clone and start is a one-time setup. Once you complete step 5 and configure CI/CD, any future changes you push to the `main` branch will be pulled and deployed to the server automatically. You will not need to SSH in again to apply updates.
+
+### 5. Set Up CI/CD
+
+To enable automatic deployment on every push to `main`, add the following secrets to your GitHub repository under Settings → Secrets and variables → Actions:
+
+| Secret | Value |
+|---|---|
+| `EC2_HOST` | Your EC2 public IP |
+| `EC2_USER` | `ubuntu` |
+| `EC2_SSH_KEY` | Contents of your `~/.ssh/taskflow-key` private key file |
+
+Once set, every push to `main` will SSH into your EC2 instance, pull the latest code, rebuild the images, and restart the stack automatically.
+
+### 6. View the RabbitMQ Dashboard
+
+Open `http://<YOUR_PUBLIC_IP>:15672` in your browser. Log in with `guest` / `guest`. You can monitor queues, message rates, and connections here.
+
+### 7. Tear Down
+
+To destroy all AWS resources created by Terraform and stop incurring charges:
+
+```bash
+cd terraform
+terraform destroy
+```
+
+---
+
 
 ## Design Decisions
 
