@@ -97,6 +97,24 @@ Provisioned with Terraform:
 - **Metrics endpoint:** `GET /metrics` returns live counts of tasks by status
 - **CloudWatch:** both containers ship logs to the `taskflow` log group in AWS CloudWatch via the `awslogs` Docker driver
 
+## Design Diagrams
+
+### Architecture Diagram
+
+<table>
+  <tr>
+    <td colspan="2" align="center"><img src="design-diagrams/architecture_diagram.jpeg"/></td>
+  </tr>
+</table>
+
+### Infrastructure Diagram
+
+<table>
+  <tr>
+    <td colspan="2" align="center"><img src="design-diagrams/infrastructure_diagram.jpeg"/></td>
+  </tr>
+</table>
+
 ## Deploy Your Own
 
 This section walks you through deploying Taskflow to your own AWS account from scratch. You will need: an AWS account, Terraform installed, the AWS CLI installed and configured, and an SSH key pair.
