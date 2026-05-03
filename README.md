@@ -137,7 +137,7 @@ Press enter twice for no passphrase. This creates `taskflow-key` (private) and `
 Clone your forked repository and navigate to the terraform folder:
 
 ```bash
-git clone https://github.com/<YOUR_USERNAME>/Taskflow.git
+git clone https://github.com/<YOUR_GITHUB_USERNAME>/Taskflow.git
 cd Taskflow/terraform
 ```
 
@@ -145,7 +145,7 @@ Initialize Terraform and apply:
 
 ```bash
 terraform init
-terraform apply
+terraform apply -var username=<YOUR_GITHUB_USERNAME>
 ```
 
 Terraform will create:
