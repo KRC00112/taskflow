@@ -54,7 +54,7 @@ app.get('/metrics', async (req, res) => {
         client.release();
 
         res.json({
-            tasks_total: parseInt(total.rows[0].count),
+            tasks_total_test: parseInt(total.rows[0].count),
             tasks_pending: parseInt(pending.rows[0].count),
             tasks_processing: parseInt(processing.rows[0].count),
             tasks_done: parseInt(done.rows[0].count),
