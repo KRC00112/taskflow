@@ -71,7 +71,7 @@ Send a POST request to `http://<PUBLIC_IP>:3000` with the following JSON body:
 }
 ```
 
-The worker picks up the job and updates the status: `pending → processing → done`.
+The worker picks up the job and updates the status: `pending → processing (wait 10 secs) → done`.
 
 ## CI/CD Pipeline
 
