@@ -112,7 +112,7 @@ This section walks you through deploying Taskflow to your own AWS account from s
 
 ### 1. Fork the Repository
 
-Fork this repository to your own GitHub account. All subsequent steps assume you are working from your fork, not the original repo. This is required so you can add your own GitHub secrets and set up CI/CD pointing to your own EC2 instance.
+Fork this repository to your own GitHub account before doing anything else. All subsequent steps assume you are working from your fork. This matters for two reasons: your GitHub secrets and CI/CD pipeline need to point to a repo you own, and Terraform will clone your fork onto the EC2 instance so that future deployments pull from the right place.
 
 ### 2. Prerequisites
 
